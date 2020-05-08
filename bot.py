@@ -7,9 +7,11 @@ import os
 import aiohttp
 import discord.http
 from discord.errors import HTTPException, Forbidden, NotFound
-
+from dotenv import load_dotenv
 import discord
 from PIL import Image, ImageSequence
+
+load_dotenv()
 
 
 # source: https://dev.to/enzoftware/how-to-build-amazing-image-filters-with-python-median-filter---sobel-filter---5h7
@@ -512,17 +514,20 @@ async def on_message(message):
         if not len(message.attachments) > 0:
             return await message.channel.send("you need to upload an image to use this command")
         else:
-            await message.channel.send("Please wait....")
-            await message.channel.trigger_typing()
-            image = await message.attachments[0].read()
-            print(args[0] if len(args) >= 1 else "dark", args[1] if len(
-                args) >= 2 else "--blurplefy", args[2:] if len(args) == 3 else ["++classic"])
-            out = convert_image(
-                image, args[0] if len(args) >= 1 else "dark", args[1] if len(args) >= 2 else "--blurplefy", args[2:] if len(args) == 3 else ["++classic"])
-            if out:
-                await message.channel.send(file=out)
-            else:
-                await message.channel.send("oops, out is none")
+            try:
+                await message.channel.send("Please wait....")
+                await message.channel.trigger_typing()
+                image = await message.attachments[0].read()
+                print(args[0] if len(args) >= 1 else "dark", args[1] if len(
+                    args) >= 2 else "--blurplefy", args[2:] if len(args) == 3 else ["++classic"])
+                out = convert_image(
+                    image, args[0] if len(args) >= 1 else "dark", args[1] if len(args) >= 2 else "--blurplefy", args[2:] if len(args) == 3 else ["++classic"])
+                if out:
+                    await message.channel.send(file=out)
+                else:
+                    await message.channel.send("oops, out is none")
+            except Exception as e:
+                await message.channel.send(f"oops, check parameters! {e}")
 
     if message.content.startswith("$$blurple"):
         args = message.content.split(" ")
@@ -530,21 +535,24 @@ async def on_message(message):
         if len(args) == 0:
             await message.channel.send("$$blurple <user id> <modifier> <method> <variations> see $$help for info on paramters")
         elif len(args) >= 1:
-            await message.channel.send("Please wait....")
-            await message.channel.trigger_typing()
-            member = await client.fetch_user(args[0])
-            if not member:
-                return await message.channel.send("user not found")
-            else:
-                image = await member.avatar_url.read()
-                print(args[1] if len(args) >= 2 else "dark", args[2] if len(
-                    args) >= 3 else "--blurplefy", args[3:] if len(args) == 4 else ["++classic"])
-                out = convert_image(
-                    image, args[1] if len(args) >= 2 else "dark", args[2] if len(args) >= 3 else "--blurplefy", args[3:] if len(args) == 4 else ["++classic"])
-                if out:
-                    await message.channel.send(file=out)
+            try:
+                await message.channel.send("Please wait....")
+                await message.channel.trigger_typing()
+                member = await client.fetch_user(args[0])
+                if not member:
+                    return await message.channel.send("user not found")
                 else:
-                    await message.channel.send("oops, out is none")
+                    image = await member.avatar_url.read()
+                    print(args[1] if len(args) >= 2 else "dark", args[2] if len(
+                        args) >= 3 else "--blurplefy", args[3:] if len(args) == 4 else ["++classic"])
+                    out = convert_image(
+                        image, args[1] if len(args) >= 2 else "dark", args[2] if len(args) >= 3 else "--blurplefy", args[3:] if len(args) == 4 else ["++classic"])
+                    if out:
+                        await message.channel.send(file=out)
+                    else:
+                        await message.channel.send("oops, out is none")
+            except Exception as e:
+                await message.channel.send(f"oops, check the paramters! {e}")
 
     elif message.content.startswith("$$help"):
         modifierlist = ""
@@ -571,4 +579,4 @@ async def on_message(message):
         await message.channel.send(content=None, embed=embed)
         # await message.channel.send(f"Blurplifier by Puyodead1!\n\nValid Modifiers:\n\`\`\`diff\n{modifierlist}\n\`\`\`\n\nValid Methods:\n\`\`\`diff\n{methodlist}\n\`\`\``")
 
-client.run("NjQ0OTI3MjQxODU1MzAzNjkx.XrTdeQ.ySLPH5ro4bX7i484BdgrEo2zGLQ")
+client.run(os.getenv("TOKEN"))
