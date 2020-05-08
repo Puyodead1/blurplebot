@@ -4,12 +4,13 @@ import json
 import math
 import sys
 import os
-import aiohttp
+import requests
 import discord.http
 from discord.errors import HTTPException, Forbidden, NotFound
 from dotenv import load_dotenv
 import discord
 from PIL import Image, ImageSequence
+
 
 load_dotenv()
 
@@ -350,6 +351,7 @@ VARIATIONS = {
 
 
 def convert_image(image, modifier, method, variations):
+    mime = None
     try:
         modifier_converter = dict(MODIFIERS[modifier])
     except KeyError:
@@ -387,6 +389,7 @@ def convert_image(image, modifier, method, variations):
 
     with Image.open(io.BytesIO(image)) as img:
         if img.format == "GIF":
+            mime = "gif"
             frames = []
             durations = []
             try:
@@ -427,6 +430,7 @@ def convert_image(image, modifier, method, variations):
             filename = f'{modifier}.gif'
 
         else:
+            mime = "png"
             img = img.convert('LA')
 
             minimum = img.getextrema()[0][0]
@@ -441,7 +445,18 @@ def convert_image(image, modifier, method, variations):
             filename = f'{modifier}.png'
 
     out.seek(0)
-    return discord.File(out, filename=filename)
+    files = {'file': out}
+    url = 'https://puyo.sucks-at.codes/api/upload'
+    headers = {"authorization": os.getenv("TYPEX_API_KEY"),
+               "content-type": f"image/{mime}"}
+    print(headers)
+    resp = requests.post(url, files=files, headers=headers)
+    if resp.status_code == 200:
+        return resp.text
+    else:
+        print(resp.status_code)
+        print(resp.text)
+        return "upload error"
 
 
 def check_image(image, modifier, method):
@@ -523,7 +538,7 @@ async def on_message(message):
                 out = convert_image(
                     image, args[0] if len(args) >= 1 else "dark", args[1] if len(args) >= 2 else "--blurplefy", args[2:] if len(args) == 3 else ["++classic"])
                 if out:
-                    await message.channel.send(file=out)
+                    await message.channel.send(out)
                 else:
                     await message.channel.send("oops, out is none")
             except Exception as e:
@@ -548,7 +563,7 @@ async def on_message(message):
                     out = convert_image(
                         image, args[1] if len(args) >= 2 else "dark", args[2] if len(args) >= 3 else "--blurplefy", args[3:] if len(args) == 4 else ["++classic"])
                     if out:
-                        await message.channel.send(file=out)
+                        await message.channel.send(out)
                     else:
                         await message.channel.send("oops, out is none")
             except Exception as e:
