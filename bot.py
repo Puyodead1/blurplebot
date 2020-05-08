@@ -506,6 +506,24 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    if message.content.startswith("$$blurpa"):
+        args = message.content.split(" ")
+        args.pop(0)
+        if not len(message.attachments) > 0:
+            return await message.channel.send("you need to upload an image to use this command")
+        else:
+            await message.channel.send("Please wait....")
+            await message.channel.trigger_typing()
+            image = await message.attachments[0].read()
+            print(args[0] if len(args) >= 1 else "dark", args[1] if len(
+                args) >= 2 else "--blurplefy", args[2:] if len(args) == 3 else ["++classic"])
+            out = convert_image(
+                image, args[0] if len(args) >= 1 else "dark", args[1] if len(args) >= 2 else "--blurplefy", args[2:] if len(args) == 3 else ["++classic"])
+            if out:
+                await message.channel.send(file=out)
+            else:
+                await message.channel.send("oops, out is none")
+
     if message.content.startswith("$$blurple"):
         args = message.content.split(" ")
         args.pop(0)
@@ -541,6 +559,8 @@ async def on_message(message):
 
         embed = discord.Embed(title="Blurplifier by Puyodead1!",
                               description="Blurplfy user avatars")
+        embed.add_field(name="Commands",
+                        value="```\nhelp\nblurple\nblurpa\n```")
         embed.add_field(name="Valid Modifiers",
                         value=f"```diff\n{modifierlist}\n```", inline=True)
         embed.add_field(name="Valid Methods",
